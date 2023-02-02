@@ -19,11 +19,12 @@ package endpoint
 
 import (
 	"bytes"
+	"encoding/json"
+	jsoniter "github.com/json-iterator/go"
 	"strconv"
 	"strings"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/siddontang/go-mysql/canal"
 	"github.com/siddontang/go-mysql/mysql"
 	"github.com/siddontang/go-mysql/schema"
@@ -35,7 +36,7 @@ import (
 	"go-mysql-transfer/util/stringutil"
 )
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+var json2 = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const defaultDateFormatter = "2006-01-02"
 
@@ -325,7 +326,7 @@ func elsHosts(addr string) []string {
 	var hosts []string
 	splits := strings.Split(addr, ",")
 	for _, split := range splits {
-		if !strings.HasPrefix(split, "http:") {
+		if !strings.HasPrefix(split, "http:") && !strings.HasPrefix(split, "https:") {
 			hosts = append(hosts, "http://"+split)
 		} else {
 			hosts = append(hosts, split)

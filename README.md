@@ -202,3 +202,34 @@ server_id=1 # 配置 MySQL replaction 需要定义，不要和 go-mysql-transfer
 
 **v1.0.4 release**
 * 修复了 -position 命令，binlog 名称验证问题
+
+
+*直接使用es出现的问题
+*1、如果提前没有初始化，更新不了
+``
+func (s *Elastic7Endpoint) prepareBulk(action, index, id, doc string, bulk *elastic.BulkService) {
+switch action {
+case canal.InsertAction:
+req := elastic.NewBulkIndexRequest().Index(index).Id(id).Doc(doc)
+bulk.Add(req)
+case canal.UpdateAction:
+//req := elastic.NewBulkUpdateRequest().Index(index).Id(id).Doc(doc)//如果文档不存在会报错，开启服务器之前需要把文档初始化下
+req := elastic.NewBulkIndexRequest().Index(index).Id(id).Doc(doc)
+bulk.Add(req)
+case canal.DeleteAction:
+req := elastic.NewBulkDeleteRequest().Index(index).Id(id)
+bulk.Add(req)
+}
+
+	logs.Infof("index: %s, doc: %s", index, doc)
+}
+``
+提示doc miss
+
+2、如果索引自己已经提前创建好的，如果涉及bool类型，不会自动识别，导致不能插入
+
+
+**v1.0.5 release**
+* 配置项中新增了position 配置
+* endpoint中	jsoniter "github.com/json-iterator/go" 替换成了 	"encoding/json"
+* 在单个文件中测试jsoniter没有问题，但是在这个包里面marshal(data)之后是空的，具体原因还没有搞清楚

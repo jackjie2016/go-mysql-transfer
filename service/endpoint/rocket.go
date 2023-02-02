@@ -19,6 +19,7 @@ package endpoint
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/siddontang/go-mysql/canal"
 	"log"
 	"strings"
@@ -113,7 +114,7 @@ func (s *RocketEndpoint) Consume(from mysql.Position, rows []*model.RowRequest) 
 		}
 	}
 
-	if len(ms) ==0{
+	if len(ms) == 0 {
 		return nil
 	}
 

@@ -18,6 +18,7 @@
 package endpoint
 
 import (
+	"encoding/json"
 	"github.com/siddontang/go-mysql/canal"
 	"log"
 	"strconv"

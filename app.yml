@@ -1,11 +1,13 @@
 # mysql配置
-addr: 127.0.0.1:3306
+addr: 127.0.0.1:13306
 user: root
-pass: root
+pass: root123
 charset : utf8
 slave_id: 1001 #slave ID
 flavor: mysql #mysql or mariadb,默认mysql
-
+position:
+  name: mysql-bin.000013
+  pos: 579
 #系统相关配置
 #data_dir: D:\\transfer #应用产生的数据存放地址，包括日志、缓存数据等，默认当前运行目录下store文件夹
 #logger:
@@ -33,7 +35,7 @@ web_admin_port: 8060 #web监控端口,默认8060
   #etcd_password: 123456 #etcd密码
 
 #目标类型
-target: redis # 支持redis、mongodb、elasticsearch、rocketmq、kafka、rabbitmq
+target: elasticsearch # 支持redis、mongodb、elasticsearch、rocketmq、kafka、rabbitmq
 
 #redis连接配置
 redis_addrs: 127.0.0.1:6379 #redis地址，多个用逗号分隔
@@ -47,11 +49,11 @@ redis_addrs: 127.0.0.1:6379 #redis地址，多个用逗号分隔
 #mongodb_username: #mongodb用户名，默认为空
 #mongodb_password: #mongodb密码，默认为空
 
-#elasticsearch连接配置
-#es_addrs: 127.0.0.1:9200 #连接地址，多个用逗号分隔
-#es_version: 7 # Elasticsearch版本，支持6和7、默认为7
-#es_password:  # 用户名
-#es_version:  # 密码
+#elasticsearch连接配置  host: ["https://127.0.0.1:9200"]
+es_addrs: "https://127.0.0.1:9200" #连接地址，多个用逗号分隔
+es_user: elastic # 用户名
+es_password:   elastic # 密码
+es_version: 7  # Elasticsearch版本，支持6和7、默认为7
 
 #rocketmq连接配置
 #rocketmq_name_servers: 127.0.0.1:9876 #rocketmq命名服务地址，多个用逗号分隔
@@ -71,11 +73,11 @@ redis_addrs: 127.0.0.1:6379 #redis地址，多个用逗号分隔
 #规则配置
 rule:
   -
-    schema: eseap #数据库名称
-    table: t_user #表名称
-    #order_by_column: id #排序字段，存量数据同步时不能为空
-    #column_lower_case:false #列名称转为小写,默认为false
-    #column_upper_case:false#列名称转为大写,默认为false
+    schema: es_shop #数据库名称
+    table: store_product #表名称
+    order_by_column: id #排序字段，存量数据同步时不能为空
+#    column_lower_case:false #列名称转为小写,默认为false
+#    column_upper_case:false #列名称转为大写,默认为false
     column_underscore_to_camel: true #列名称下划线转驼峰,默认为false
     # 包含的列，多值逗号分隔，如：id,name,age,area_id  为空时表示包含全部列
     #include_columns: ID,USER_NAME,PASSWORD
@@ -104,18 +106,19 @@ rule:
     #mongodb_collection: transfer_test_topic #mongodb collection，可以为空，默认使用表名称
 
     #elasticsearch相关
-    #es_index: user_index #Index名称,可以为空，默认使用表(Table)名称
-    #es_mappings: #索引映射，可以为空，为空时根据数据类型自行推导ES推导
-    #  -
-    #    column: REMARK #数据库列名称
-    #    field: remark #映射后的ES字段名称
-    #    type: text #ES字段类型
-    #    analyzer: ik_smart #ES分词器，type为text此项有意义
-    #    #format: #日期格式，type为date此项有意义
-    #  -
-    #    column: USER_NAME #数据库列名称
-    #    field: account #映射后的ES字段名称
-    #    type: keyword #ES字段类型
+
+#    es_index: shop-product #Index名称,可以为空，默认使用表(Table)名称
+#    es_mappings: #索引映射，可以为空，为空时根据数据类型自行推导ES推导
+#      -
+#        column: isBest #数据库列名称
+#        field: is_best #映射后的ES字段名称
+#        type: boolean #ES字段类型
+#        analyzer: ik_smart #ES分词器，type为text此项有意义
+        #format: #日期格式，type为date此项有意义
+#      -
+#        column: USER_NAME #数据库列名称
+#        field: account #映射后的ES字段名称
+#        type: keyword #ES字段类型
 
     #rocketmq相关
     #rocketmq_topic: transfer_test_topic #rocketmq topic，可以为空，默认使用表名称

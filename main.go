@@ -116,6 +116,10 @@ func main() {
 	if positionFlag {
 		doPosition()
 		return
+	} else {
+		cfg := global.Cfg()
+		InitPositon(cfg)
+
 	}
 
 	err = service.Initialize()
@@ -159,6 +163,29 @@ func doStatus() {
 	fmt.Printf("The current dump position is : %s %d \n", pos.Name, pos.Pos)
 }
 
+func InitPositon(c *global.Config) {
+	if c.Position == nil {
+		return
+	}
+	if c.Position.Pos > 0 && c.Position.Name != "" {
+
+		matched, _ := regexp.MatchString(".+\\.\\d+$", c.Position.Name)
+		if !matched {
+			println("error: The parameter File must be like: mysql-bin.000001")
+			//return errors.New("error: The parameter File must be like: mysql-bin.000001")
+		}
+		ps := storage.NewPositionStorage()
+		pos := mysql.Position{
+			Name: c.Position.Name,
+			Pos:  c.Position.Pos,
+		}
+		ps.Save(pos)
+
+		println("ok")
+	}
+	println("ok")
+	//return nil
+}
 func doPosition() {
 	others := flag.Args()
 	if len(others) != 2 {

@@ -62,10 +62,11 @@ var _config *Config
 type Config struct {
 	Target string `yaml:"target"` // 目标类型，支持redis、mongodb
 
-	Addr     string `yaml:"addr"`
-	User     string `yaml:"user"`
-	Password string `yaml:"pass"`
-	Charset  string `yaml:"charset"`
+	Addr     string    `yaml:"addr"`
+	User     string    `yaml:"user"`
+	Password string    `yaml:"pass"`
+	Charset  string    `yaml:"charset"`
+	Position *Position `yaml:"position"`
 
 	SlaveID uint32 `yaml:"slave_id"`
 	Flavor  string `yaml:"flavor"`
@@ -128,7 +129,10 @@ type Config struct {
 	isReserveRawData bool //保留原始数据
 	isMQ             bool //是否消息队列
 }
-
+type Position struct {
+	Name string `yaml:"name"`
+	Pos  uint32 `yaml:"pos"` //pos
+}
 type Cluster struct {
 	Name             string `yaml:"name"`
 	BindIp           string `yaml:"bind_ip"` //绑定IP

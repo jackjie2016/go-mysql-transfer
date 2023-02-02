@@ -19,8 +19,12 @@ package endpoint
 
 import (
 	"context"
+	"crypto/tls"
+	"go-mysql-transfer/util/logagent"
 	"log"
+	"net/http"
 	"sync"
+	"time"
 
 	"github.com/juju/errors"
 	"github.com/olivere/elastic/v7"
@@ -31,7 +35,6 @@ import (
 	"go-mysql-transfer/metrics"
 	"go-mysql-transfer/model"
 	"go-mysql-transfer/service/luaengine"
-	"go-mysql-transfer/util/logagent"
 	"go-mysql-transfer/util/logs"
 	"go-mysql-transfer/util/stringutil"
 )
@@ -53,6 +56,18 @@ func newElastic7Endpoint() *Elastic7Endpoint {
 }
 
 func (s *Elastic7Endpoint) Connect() error {
+
+	//ESCfg := config.Cfg.Elasticsearch
+	//err := es.InitClientWithOptions(es.DefaultClient, ESCfg.Host,
+	//	ESCfg.User,
+	//	ESCfg.Password,
+	//	es.WithScheme("https"))
+	//if err != nil {
+	//	logger.Error("InitClientWithOptions error", zap.Error(err), zap.String("client", es.DefaultClient))
+	//	panic(err)
+	//}
+	//global.ES = es.GetClient(es.DefaultClient)
+
 	var options []elastic.ClientOptionFunc
 	options = append(options, elastic.SetErrorLog(logagent.NewElsLoggerAgent()))
 	options = append(options, elastic.SetURL(s.hosts...))
@@ -60,15 +75,31 @@ func (s *Elastic7Endpoint) Connect() error {
 		options = append(options, elastic.SetBasicAuth(global.Cfg().ElsUser, global.Cfg().Password))
 	}
 
-	client, err := elastic.NewClient(options...)
+	esOptions := getBaseOptions(global.Cfg().ElsUser, global.Cfg().ElsPassword, s.hosts...)
+
+	client, err := elastic.NewClient(esOptions...)
 	if err != nil {
 		return err
 	}
 
 	s.client = client
 	return s.indexMapping()
-}
 
+	//err := es.InitClientWithOptions(es.DefaultClient, s.hosts, global.Cfg().ElsUser, global.Cfg().ElsPassword, es.WithScheme("https"))
+	//if err != nil {
+	//	panic(err)
+	//}
+	//s.client = es.GetClient(es.DefaultClient).Client
+	//
+	//return s.indexMapping()
+}
+func getDefaultClient() *http.Client {
+	tr := &http.Transport{
+		DisableKeepAlives: true,
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+	}
+	return &http.Client{Transport: tr}
+}
 func (s *Elastic7Endpoint) indexMapping() error {
 	for _, rule := range global.RuleInsList() {
 		exists, err := s.client.IndexExists(rule.ElsIndex).Do(context.Background())
@@ -87,7 +118,20 @@ func (s *Elastic7Endpoint) indexMapping() error {
 
 	return nil
 }
-
+func getBaseOptions(username, password string, urls ...string) []elastic.ClientOptionFunc {
+	options := make([]elastic.ClientOptionFunc, 0)
+	options = append(options, elastic.SetURL(urls...))
+	options = append(options, elastic.SetBasicAuth(username, password))
+	options = append(options, elastic.SetHealthcheckTimeoutStartup(15*time.Second))
+	//开启Sniff，SDK会定期(默认15分钟一次)嗅探集群中全部节点，将全部节点都加入到连接列表中，
+	//后续新增的节点也会自动加入到可连接列表，但实际生产中我们可能会设置专门的协调节点，所以默认不开启嗅探
+	options = append(options, elastic.SetSniff(false))
+	options = append(options, elastic.SetScheme("https"))
+	options = append(options, elastic.SetHttpClient(getDefaultClient()))
+	options = append(options, elastic.SetHealthcheck(false))
+	options = append(options, elastic.SetErrorLog(logagent.NewElsLoggerAgent()))
+	return options
+}
 func (s *Elastic7Endpoint) insertIndexMapping(rule *global.Rule) error {
 	var properties map[string]interface{}
 	if rule.LuaEnable() {
@@ -117,12 +161,14 @@ func (s *Elastic7Endpoint) insertIndexMapping(rule *global.Rule) error {
 }
 
 func (s *Elastic7Endpoint) updateIndexMapping(rule *global.Rule) error {
+
+	return nil
 	ret, err := s.client.GetMapping().Index(rule.ElsIndex).Do(context.Background())
 	if err != nil {
 		return err
 	}
 
-	if ret[rule.ElsIndex]==nil{
+	if ret[rule.ElsIndex] == nil {
 		return nil
 	}
 	retIndex := ret[rule.ElsIndex].(map[string]interface{})
@@ -295,7 +341,8 @@ func (s *Elastic7Endpoint) prepareBulk(action, index, id, doc string, bulk *elas
 		req := elastic.NewBulkIndexRequest().Index(index).Id(id).Doc(doc)
 		bulk.Add(req)
 	case canal.UpdateAction:
-		req := elastic.NewBulkUpdateRequest().Index(index).Id(id).Doc(doc)
+		//req := elastic.NewBulkUpdateRequest().Index(index).Id(id).Doc(doc)//如果文档不存在会报错，开启服务器之前需要把文档初始化下
+		req := elastic.NewBulkIndexRequest().Index(index).Id(id).Doc(doc)
 		bulk.Add(req)
 	case canal.DeleteAction:
 		req := elastic.NewBulkDeleteRequest().Index(index).Id(id)
